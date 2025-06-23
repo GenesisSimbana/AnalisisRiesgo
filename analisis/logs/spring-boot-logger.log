@@ -99,3 +99,48 @@
 2025-06-23 00:05:41,998 INFO c.b.o.a.c.HistorialEstadosController [http-nio-8080-exec-6] Received request to delete HistorialEstados with id: 49
 2025-06-23 00:05:42,000 INFO c.b.o.a.s.HistorialEstadosService [http-nio-8080-exec-6] Attempting to delete HistorialEstados with id: 49
 2025-06-23 00:05:42,604 INFO c.b.o.a.s.HistorialEstadosService [http-nio-8080-exec-6] Successfully deleted HistorialEstados with id: 49
+2025-06-23 08:42:55,261 INFO o.h.v.i.u.Version [background-preinit] HV000001: Hibernate Validator 8.0.2.Final
+2025-06-23 08:42:55,450 INFO o.s.b.StartupInfoLogger [restartedMain] Starting AnalisisApplication using Java 21.0.7 with PID 19256 (C:\ESPE-ARQUI\Proyecto-AnalisisRiesgos\AnalisisRiesgo\analisis\target\classes started by Owner in C:\ESPE-ARQUI\Proyecto-AnalisisRiesgos\AnalisisRiesgo\analisis)
+2025-06-23 08:42:55,452 DEBUG o.s.b.StartupInfoLogger [restartedMain] Running with Spring Boot v3.5.3, Spring v6.2.8
+2025-06-23 08:42:55,454 INFO o.s.b.SpringApplication [restartedMain] No active profile set, falling back to 1 default profile: "default"
+2025-06-23 08:42:55,553 INFO o.s.b.l.DeferredLog [restartedMain] Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2025-06-23 08:42:55,554 INFO o.s.b.l.DeferredLog [restartedMain] For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2025-06-23 08:42:57,337 INFO o.s.d.r.c.RepositoryConfigurationDelegate [restartedMain] Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-06-23 08:42:57,437 INFO o.s.d.r.c.RepositoryConfigurationDelegate [restartedMain] Finished Spring Data repository scanning in 74 ms. Found 2 JPA repository interfaces.
+2025-06-23 08:42:59,046 INFO o.s.b.w.e.t.TomcatWebServer [restartedMain] Tomcat initialized with port 8080 (http)
+2025-06-23 08:42:59,086 INFO o.a.j.l.DirectJDKLog [restartedMain] Initializing ProtocolHandler ["http-nio-8080"]
+2025-06-23 08:42:59,100 INFO o.a.j.l.DirectJDKLog [restartedMain] Starting service [Tomcat]
+2025-06-23 08:42:59,101 INFO o.a.j.l.DirectJDKLog [restartedMain] Starting Servlet engine: [Apache Tomcat/10.1.42]
+2025-06-23 08:42:59,227 INFO o.a.j.l.DirectJDKLog [restartedMain] Initializing Spring embedded WebApplicationContext
+2025-06-23 08:42:59,229 INFO o.s.b.w.s.c.ServletWebServerApplicationContext [restartedMain] Root WebApplicationContext: initialization completed in 3674 ms
+2025-06-23 08:42:59,609 INFO o.h.j.i.u.LogHelper [restartedMain] HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-06-23 08:42:59,710 INFO o.h.Version [restartedMain] HHH000412: Hibernate ORM core version 6.6.18.Final
+2025-06-23 08:42:59,760 INFO o.h.c.i.RegionFactoryInitiator [restartedMain] HHH000026: Second-level cache disabled
+2025-06-23 08:43:00,394 INFO o.s.o.j.p.SpringPersistenceUnitInfo [restartedMain] No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-06-23 08:43:00,435 INFO c.z.h.HikariDataSource [restartedMain] HikariPool-1 - Starting...
+2025-06-23 08:43:00,713 INFO c.z.h.p.HikariPool [restartedMain] HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4f0ee365
+2025-06-23 08:43:00,716 INFO c.z.h.HikariDataSource [restartedMain] HikariPool-1 - Start completed.
+2025-06-23 08:43:00,780 WARN o.h.e.j.d.i.DialectFactoryImpl [restartedMain] HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-06-23 08:43:00,823 INFO o.h.e.j.e.i.JdbcEnvironmentInitiator [restartedMain] HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 16.9
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-06-23 08:43:02,238 INFO o.h.e.t.j.p.i.JtaPlatformInitiator [restartedMain] HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-06-23 08:43:02,377 INFO o.s.o.j.AbstractEntityManagerFactoryBean [restartedMain] Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-06-23 08:43:03,273 WARN o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration [restartedMain] spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-06-23 08:43:05,412 INFO o.s.b.d.a.OptionalLiveReloadServer [restartedMain] LiveReload server is running on port 35729
+2025-06-23 08:43:05,458 INFO o.a.j.l.DirectJDKLog [restartedMain] Starting ProtocolHandler ["http-nio-8080"]
+2025-06-23 08:43:05,505 INFO o.s.b.w.e.t.TomcatWebServer [restartedMain] Tomcat started on port 8080 (http) with context path '/'
+2025-06-23 08:43:05,570 INFO o.s.b.StartupInfoLogger [restartedMain] Started AnalisisApplication in 11.082 seconds (process running for 11.705)
+2025-06-23 08:43:44,794 INFO o.a.j.l.DirectJDKLog [http-nio-8080-exec-4] Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-06-23 08:43:44,795 INFO o.s.w.s.FrameworkServlet [http-nio-8080-exec-4] Initializing Servlet 'dispatcherServlet'
+2025-06-23 08:43:44,797 INFO o.s.w.s.FrameworkServlet [http-nio-8080-exec-4] Completed initialization in 1 ms
+2025-06-23 08:43:44,857 INFO c.b.o.a.c.HistorialEstadosController [http-nio-8080-exec-4] Received request to get all HistorialEstados. Page: 0, Size: 20, SortBy: fechaHora, SortDir: desc
+2025-06-23 08:43:45,069 WARN o.s.d.w.c.SpringDataJacksonConfiguration$PageModule$WarningLoggingModifier [http-nio-8080-exec-4] Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
