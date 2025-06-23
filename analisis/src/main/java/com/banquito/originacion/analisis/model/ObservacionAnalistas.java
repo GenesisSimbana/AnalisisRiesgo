@@ -37,7 +37,6 @@ public class ObservacionAnalistas {
     @Column(name = "version", nullable = false, precision = 9, scale = 0)
     private BigDecimal version;
     
-    // Constructor solo para la primary key
     public ObservacionAnalistas(Integer idObservacionAnalista) {
         this.idObservacionAnalista = idObservacionAnalista;
     }

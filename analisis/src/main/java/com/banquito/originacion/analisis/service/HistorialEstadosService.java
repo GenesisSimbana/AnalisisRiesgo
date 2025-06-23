@@ -14,10 +14,16 @@ import com.banquito.originacion.analisis.exception.HistorialEstadosNotFoundExcep
 import com.banquito.originacion.analisis.enums.EstadoHistorialEnum;
 import com.banquito.originacion.analisis.model.HistorialEstados;
 import com.banquito.originacion.analisis.repository.HistorialEstadosRepository;
+import com.banquito.originacion.analisis.exception.InvalidTransitionException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @Transactional
 public class HistorialEstadosService {
+    
+    private static final Logger log = LoggerFactory.getLogger(HistorialEstadosService.class);
     
     private final HistorialEstadosRepository historialEstadosRepository;
     
@@ -34,10 +40,13 @@ public class HistorialEstadosService {
     }
     
     public HistorialEstados findById(Integer idHistorial) {
+        log.info("Attempting to find HistorialEstados with id: {}", idHistorial);
         Optional<HistorialEstados> historial = historialEstadosRepository.findById(idHistorial);
         if (historial.isEmpty()) {
+            log.warn("HistorialEstados with id: {} not found.", idHistorial);
             throw new HistorialEstadosNotFoundException(idHistorial.toString(), "ID de historial");
         }
+        log.info("Successfully found HistorialEstados with id: {}", idHistorial);
         return historial.get();
     }
     
@@ -65,67 +74,92 @@ public class HistorialEstadosService {
         return historialEstadosRepository.findByIdSolicitudOrderByFechaHoraDesc(idSolicitud);
     }
     
-    /**
-     * REGLA DE NEGOCIO: Crear nuevo historial de estado
-     * - Si no se proporciona fecha, se asigna la fecha actual
-     * - Si no se proporciona versión, se inicia en 1
-     * - Se valida que el estado sea válido
-     * - Se registra automáticamente la fecha de creación
-     */
     public HistorialEstados save(HistorialEstados historialEstados) {
+        log.info("Attempting to save new HistorialEstados for solicitud: {}", historialEstados.getIdSolicitud());
+        log.debug("New state details: {}", historialEstados);
+
+        // Regla de negocio: Validar que el estado sea válido
+        if (historialEstados.getEstado() == null) {
+            log.error("Save attempt failed: State is null.");
+            throw new IllegalArgumentException("El estado no puede ser nulo");
+        }
+        
+        // Regla de negocio: Validar que el usuario no esté vacío
+        if (historialEstados.getUsuario() == null || historialEstados.getUsuario().trim().isEmpty()) {
+            throw new IllegalArgumentException("El usuario no puede estar vacío");
+        }
+        
+        // Regla de negocio: Validar que el motivo no esté vacío
+        if (historialEstados.getMotivo() == null || historialEstados.getMotivo().trim().isEmpty()) {
+            log.error("Save attempt failed: Motivo is null or empty for solicitud: {}.", historialEstados.getIdSolicitud());
+            throw new IllegalArgumentException("El motivo no puede estar vacío");
+        }
+
+        Integer idSolicitud = historialEstados.getIdSolicitud();
+        EstadoHistorialEnum nuevoEstado = historialEstados.getEstado();
+
+        Optional<HistorialEstados> ultimoHistorialOpt = this.findLatestByIdSolicitud(idSolicitud);
+
+        if (ultimoHistorialOpt.isPresent()) {
+            // La solicitud ya tiene un historial, se debe validar la transición.
+            HistorialEstados ultimoHistorial = ultimoHistorialOpt.get();
+            EstadoHistorialEnum estadoActual = ultimoHistorial.getEstado();
+            log.debug("Existing solicitud {}. Current state is {}. Attempting to transition to {}.", idSolicitud, estadoActual, nuevoEstado);
+
+            // Regla 2: Evitar estados duplicados consecutivos.
+            if (estadoActual == nuevoEstado) {
+                log.warn("Invalid transition for solicitud {}: Attempted to transition to the same state {}.", idSolicitud, nuevoEstado);
+                throw new InvalidTransitionException("La solicitud " + idSolicitud + " ya se encuentra en el estado " + nuevoEstado + ".");
+            }
+
+            // Regla 1: Validar si la transición de estado es permitida.
+            if (!this.validarTransicionEstado(estadoActual, nuevoEstado)) {
+                log.error("Invalid transition for solicitud {}: Cannot transition from {} to {}.", idSolicitud, estadoActual, nuevoEstado);
+                throw new InvalidTransitionException(idSolicitud, estadoActual, nuevoEstado);
+            }
+            
+            // Regla de negocio: Incrementar la versión basada en el último registro.
+            historialEstados.setVersion(ultimoHistorial.getVersion().add(BigDecimal.ONE));
+        } else {
+            // Es el primer estado para esta solicitud.
+            // Regla: El primer estado de una solicitud siempre debe ser 'Borrador'.
+            log.debug("This is the first state for solicitud {}. Validating initial state is 'Borrador'.", idSolicitud);
+            if (nuevoEstado != EstadoHistorialEnum.Borrador) {
+                log.error("Invalid initial state for new solicitud {}: Must be 'Borrador', but was '{}'.", idSolicitud, nuevoEstado);
+                throw new InvalidTransitionException("El estado inicial para una nueva solicitud debe ser 'Borrador', no '" + nuevoEstado + "'.");
+            }
+            
+            // Regla de negocio: La versión inicial es 1.
+            historialEstados.setVersion(BigDecimal.ONE);
+        }
+        
         // Regla de negocio: Fecha automática si no se proporciona
         if (historialEstados.getFechaHora() == null) {
             historialEstados.setFechaHora(LocalDateTime.now());
         }
         
-        // Regla de negocio: Versión inicial si no se proporciona
-        if (historialEstados.getVersion() == null) {
-            historialEstados.setVersion(BigDecimal.ONE);
-        }
-        
-        // Regla de negocio: Validar que el estado sea válido
-        if (historialEstados.getEstado() == null) {
-            throw new IllegalArgumentException("El estado no puede ser nulo");
-        }
-        
-        // Regla de negocio: Validar que el usuario no esté vacío
-        if (historialEstados.getUsuario() == null || historialEstados.getUsuario().trim().isEmpty()) {
-            throw new IllegalArgumentException("El usuario no puede estar vacío");
-        }
-        
-        // Regla de negocio: Validar que el motivo no esté vacío
-        if (historialEstados.getMotivo() == null || historialEstados.getMotivo().trim().isEmpty()) {
-            throw new IllegalArgumentException("El motivo no puede estar vacío");
-        }
-        
-        return historialEstadosRepository.save(historialEstados);
+        HistorialEstados savedHistorial = historialEstadosRepository.save(historialEstados);
+        log.info("Successfully saved new HistorialEstados with id {} for solicitud {}", savedHistorial.getIdHistorial(), savedHistorial.getIdSolicitud());
+        return savedHistorial;
     }
-    
-    /**
-     * REGLA DE NEGOCIO: Actualizar historial completo
-     * - Se valida que el historial exista
-     * - Se incrementa automáticamente la versión
-     * - Se mantiene la trazabilidad de cambios
-     */
+
     public HistorialEstados update(Integer idHistorial, HistorialEstados historialEstados) {
+        log.info("Attempting to fully update HistorialEstados with id: {}", idHistorial);
+        log.debug("Update data: {}", historialEstados);
         HistorialEstados existingHistorial = findById(idHistorial);
         
-        // Regla de negocio: Validar que el estado sea válido
         if (historialEstados.getEstado() == null) {
             throw new IllegalArgumentException("El estado no puede ser nulo");
         }
         
-        // Regla de negocio: Validar que el usuario no esté vacío
         if (historialEstados.getUsuario() == null || historialEstados.getUsuario().trim().isEmpty()) {
             throw new IllegalArgumentException("El usuario no puede estar vacío");
         }
         
-        // Regla de negocio: Validar que el motivo no esté vacío
         if (historialEstados.getMotivo() == null || historialEstados.getMotivo().trim().isEmpty()) {
             throw new IllegalArgumentException("El motivo no puede estar vacío");
         }
         
-        // Regla de negocio: Incrementar versión automáticamente
         BigDecimal nuevaVersion = existingHistorial.getVersion().add(BigDecimal.ONE);
         
         existingHistorial.setIdSolicitud(historialEstados.getIdSolicitud());
@@ -135,19 +169,16 @@ public class HistorialEstadosService {
         existingHistorial.setMotivo(historialEstados.getMotivo());
         existingHistorial.setVersion(nuevaVersion);
         
-        return historialEstadosRepository.save(existingHistorial);
+        HistorialEstados updatedHistorial = historialEstadosRepository.save(existingHistorial);
+        log.info("Successfully updated HistorialEstados with id: {}", updatedHistorial.getIdHistorial());
+        return updatedHistorial;
     }
-    
-    /**
-     * REGLA DE NEGOCIO: Actualizar historial parcialmente
-     * - Solo se actualizan los campos proporcionados
-     * - Se incrementa automáticamente la versión
-     * - Se mantienen los valores existentes para campos no proporcionados
-     */
+
     public HistorialEstados partialUpdate(Integer idHistorial, HistorialEstados historialEstados) {
+        log.info("Attempting to partially update HistorialEstados with id: {}", idHistorial);
+        log.debug("Partial update data: {}", historialEstados);
         HistorialEstados existingHistorial = findById(idHistorial);
         
-        // Regla de negocio: Actualizar solo campos proporcionados
         if (historialEstados.getIdSolicitud() != null) {
             existingHistorial.setIdSolicitud(historialEstados.getIdSolicitud());
         }
@@ -164,47 +195,41 @@ public class HistorialEstadosService {
             existingHistorial.setMotivo(historialEstados.getMotivo());
         }
         
-        // Regla de negocio: Incrementar versión automáticamente
         existingHistorial.setVersion(existingHistorial.getVersion().add(BigDecimal.ONE));
         
-        return historialEstadosRepository.save(existingHistorial);
+        HistorialEstados updatedHistorial = historialEstadosRepository.save(existingHistorial);
+        log.info("Successfully partially updated HistorialEstados with id: {}", updatedHistorial.getIdHistorial());
+        return updatedHistorial;
     }
-    
-    /**
-     * REGLA DE NEGOCIO: Eliminar historial
-     * - Se valida que el historial exista antes de eliminar
-     * - Se mantiene la integridad referencial
-     */
+
     public void deleteById(Integer idHistorial) {
+        log.info("Attempting to delete HistorialEstados with id: {}", idHistorial);
         if (!historialEstadosRepository.existsById(idHistorial)) {
+            log.warn("Delete failed. HistorialEstados with id: {} not found.", idHistorial);
             throw new HistorialEstadosNotFoundException(idHistorial.toString(), "ID de historial");
         }
         historialEstadosRepository.deleteById(idHistorial);
+        log.info("Successfully deleted HistorialEstados with id: {}", idHistorial);
     }
     
     public boolean existsById(Integer idHistorial) {
         return historialEstadosRepository.existsById(idHistorial);
     }
-    
-    /**
-     * REGLA DE NEGOCIO: Obtener el estado actual de una solicitud
-     * - Retorna el último estado registrado para la solicitud
-     * - Útil para conocer el estado actual sin revisar todo el historial
-     */
+
     public EstadoHistorialEnum getEstadoActualSolicitud(Integer idSolicitud) {
+        log.info("Fetching current state for solicitud id: {}", idSolicitud);
         Optional<HistorialEstados> ultimoHistorial = findLatestByIdSolicitud(idSolicitud);
         if (ultimoHistorial.isPresent()) {
-            return ultimoHistorial.get().getEstado();
+            EstadoHistorialEnum estado = ultimoHistorial.get().getEstado();
+            log.info("Current state for solicitud {} is {}.", idSolicitud, estado);
+            return estado;
         }
+        log.warn("No history found for solicitud id: {}. Cannot determine current state.", idSolicitud);
         return null; // No hay historial para esta solicitud
     }
-    
-    /**
-     * REGLA DE NEGOCIO: Validar transición de estado
-     * - Verifica si la transición de estado es válida según el flujo de negocio
-     * - Previene transiciones no permitidas
-     */
+
     public boolean validarTransicionEstado(EstadoHistorialEnum estadoActual, EstadoHistorialEnum nuevoEstado) {
+        log.debug("Validating transition from {} to {}", estadoActual, nuevoEstado);
         // Regla de negocio: Flujo de estados permitidos
         switch (estadoActual) {
             case Borrador:
@@ -217,8 +242,10 @@ public class HistorialEstadosService {
             case Aprobada:
             case Rechazada:
             case Cancelada:
+                log.debug("Transition from final state {} is not allowed.", estadoActual);
                 return false; // Estados finales, no se pueden cambiar
             default:
+                log.warn("Attempted transition from an unknown or unhandled state: {}", estadoActual);
                 return false;
         }
     }

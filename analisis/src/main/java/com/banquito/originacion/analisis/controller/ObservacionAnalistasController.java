@@ -26,6 +26,9 @@ import com.banquito.originacion.analisis.exception.ObservacionAnalistasNotFoundE
 import com.banquito.originacion.analisis.model.ObservacionAnalistas;
 import com.banquito.originacion.analisis.service.ObservacionAnalistasService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -37,6 +40,8 @@ import jakarta.validation.Valid;
 @RequestMapping("/v1/observaciones-analistas")
 @Tag(name = "Observaciones de Analistas", description = "API para gestionar las observaciones de analistas")
 public class ObservacionAnalistasController {
+
+    private static final Logger log = LoggerFactory.getLogger(ObservacionAnalistasController.class);
 
     private final ObservacionAnalistasService service;
     private final ObservacionAnalistasMapper mapper;
@@ -63,6 +68,7 @@ public class ObservacionAnalistasController {
             @Parameter(description = "Dirección del ordenamiento (asc/desc)") 
             @RequestParam(defaultValue = "desc") String sortDir) {
         
+        log.info("Received request to get all ObservacionAnalistas. Page: {}, Size: {}, SortBy: {}, SortDir: {}", page, size, sortBy, sortDir);
         Sort sort = sortDir.equalsIgnoreCase("desc") ? 
             Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
@@ -84,6 +90,7 @@ public class ObservacionAnalistasController {
             @Parameter(description = "ID de la observación") 
             @PathVariable Integer id) {
         
+        log.info("Received request to get ObservacionAnalistas by id: {}", id);
         ObservacionAnalistas observacion = service.findById(id);
         return ResponseEntity.ok(mapper.toDTO(observacion));
     }
@@ -98,6 +105,7 @@ public class ObservacionAnalistasController {
             @Parameter(description = "ID de la solicitud") 
             @PathVariable Integer idSolicitud) {
         
+        log.info("Received request to get ObservacionAnalistas by idSolicitud: {}", idSolicitud);
         List<ObservacionAnalistas> observaciones = service.findByIdSolicitudOrderByFechaHoraDesc(idSolicitud);
         List<ObservacionAnalistasDTO> dtos = mapper.toDTOList(observaciones);
         return ResponseEntity.ok(dtos);
@@ -113,6 +121,7 @@ public class ObservacionAnalistasController {
             @Parameter(description = "Usuario que realizó la observación") 
             @PathVariable String usuario) {
         
+        log.info("Received request to get ObservacionAnalistas by usuario: {}", usuario);
         List<ObservacionAnalistas> observaciones = service.findByUsuarioOrderByFechaHoraDesc(usuario);
         List<ObservacionAnalistasDTO> dtos = mapper.toDTOList(observaciones);
         return ResponseEntity.ok(dtos);
@@ -129,6 +138,8 @@ public class ObservacionAnalistasController {
             @Parameter(description = "Datos de la observación a crear") 
             @Valid @RequestBody ObservacionAnalistasDTO observacionAnalistasDTO) {
         
+        log.info("Received request to create new ObservacionAnalistas.");
+        log.debug("Request body: {}", observacionAnalistasDTO);
         ObservacionAnalistas observacion = mapper.toEntity(observacionAnalistasDTO);
         ObservacionAnalistas savedObservacion = service.save(observacion);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDTO(savedObservacion));
@@ -148,6 +159,8 @@ public class ObservacionAnalistasController {
             @Parameter(description = "Datos actualizados de la observación") 
             @Valid @RequestBody ObservacionAnalistasDTO observacionAnalistasDTO) {
         
+        log.info("Received request to update ObservacionAnalistas with id: {}", id);
+        log.debug("Request body: {}", observacionAnalistasDTO);
         ObservacionAnalistas observacion = mapper.toEntity(observacionAnalistasDTO);
         ObservacionAnalistas updatedObservacion = service.update(id, observacion);
         return ResponseEntity.ok(mapper.toDTO(updatedObservacion));
@@ -167,6 +180,8 @@ public class ObservacionAnalistasController {
             @Parameter(description = "Datos parciales de la observación") 
             @RequestBody ObservacionAnalistasDTO observacionAnalistasDTO) {
         
+        log.info("Received request to partially update ObservacionAnalistas with id: {}", id);
+        log.debug("Request body: {}", observacionAnalistasDTO);
         ObservacionAnalistas observacion = mapper.toEntity(observacionAnalistasDTO);
         ObservacionAnalistas updatedObservacion = service.partialUpdate(id, observacion);
         return ResponseEntity.ok(mapper.toDTO(updatedObservacion));
@@ -183,12 +198,14 @@ public class ObservacionAnalistasController {
             @Parameter(description = "ID de la observación") 
             @PathVariable Integer id) {
         
+        log.info("Received request to delete ObservacionAnalistas with id: {}", id);
         service.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
     @ExceptionHandler(ObservacionAnalistasNotFoundException.class)
-    public ResponseEntity<Void> handleObservacionAnalistasNotFound(ObservacionAnalistasNotFoundException ex) {
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<String> handleObservacionAnalistasNotFound(ObservacionAnalistasNotFoundException ex) {
+        log.error("ObservacionAnalistasNotFoundException handled: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 } 

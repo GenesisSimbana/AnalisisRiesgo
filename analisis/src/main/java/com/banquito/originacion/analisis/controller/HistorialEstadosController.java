@@ -25,6 +25,7 @@ import com.banquito.originacion.analisis.exception.HistorialEstadosNotFoundExcep
 import com.banquito.originacion.analisis.enums.EstadoHistorialEnum;
 import com.banquito.originacion.analisis.model.HistorialEstados;
 import com.banquito.originacion.analisis.service.HistorialEstadosService;
+import com.banquito.originacion.analisis.exception.InvalidTransitionException;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,11 +33,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/v1/historial-estados")
 @Tag(name = "Historial de Estados", description = "API para gestionar el historial de estados de solicitudes")
 public class HistorialEstadosController {
+
+    private static final Logger log = LoggerFactory.getLogger(HistorialEstadosController.class);
 
     private final HistorialEstadosService service;
     private final HistorialEstadosMapper mapper;
@@ -63,6 +68,7 @@ public class HistorialEstadosController {
             @Parameter(description = "Dirección del ordenamiento (asc/desc)") 
             @RequestParam(defaultValue = "desc") String sortDir) {
         
+        log.info("Received request to get all HistorialEstados. Page: {}, Size: {}, SortBy: {}, SortDir: {}", page, size, sortBy, sortDir);
         Sort sort = sortDir.equalsIgnoreCase("desc") ? 
             Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
@@ -84,6 +90,7 @@ public class HistorialEstadosController {
             @Parameter(description = "ID del historial") 
             @PathVariable Integer id) {
         
+        log.info("Received request to get HistorialEstados by id: {}", id);
         HistorialEstados historial = service.findById(id);
         return ResponseEntity.ok(mapper.toDTO(historial));
     }
@@ -98,6 +105,7 @@ public class HistorialEstadosController {
             @Parameter(description = "ID de la solicitud") 
             @PathVariable Integer idSolicitud) {
         
+        log.info("Received request to get HistorialEstados by idSolicitud: {}", idSolicitud);
         List<HistorialEstados> historiales = service.findByIdSolicitudOrderByFechaHoraDesc(idSolicitud);
         List<HistorialEstadosDTO> dtos = mapper.toDTOList(historiales);
         return ResponseEntity.ok(dtos);
@@ -113,6 +121,7 @@ public class HistorialEstadosController {
             @Parameter(description = "Estado del historial") 
             @PathVariable EstadoHistorialEnum estado) {
         
+        log.info("Received request to get HistorialEstados by estado: {}", estado);
         List<HistorialEstados> historiales = service.findByEstado(estado);
         List<HistorialEstadosDTO> dtos = mapper.toDTOList(historiales);
         return ResponseEntity.ok(dtos);
@@ -128,6 +137,7 @@ public class HistorialEstadosController {
             @Parameter(description = "Usuario que realizó el cambio") 
             @PathVariable String usuario) {
         
+        log.info("Received request to get HistorialEstados by usuario: {}", usuario);
         List<HistorialEstados> historiales = service.findByUsuario(usuario);
         List<HistorialEstadosDTO> dtos = mapper.toDTOList(historiales);
         return ResponseEntity.ok(dtos);
@@ -144,6 +154,8 @@ public class HistorialEstadosController {
             @Parameter(description = "Datos del historial a crear") 
             @Valid @RequestBody HistorialEstadosDTO historialEstadosDTO) {
         
+        log.info("Received request to create new HistorialEstados.");
+        log.debug("Request body: {}", historialEstadosDTO);
         HistorialEstados historial = mapper.toEntity(historialEstadosDTO);
         HistorialEstados savedHistorial = service.save(historial);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDTO(savedHistorial));
@@ -163,6 +175,8 @@ public class HistorialEstadosController {
             @Parameter(description = "Datos actualizados del historial") 
             @Valid @RequestBody HistorialEstadosDTO historialEstadosDTO) {
         
+        log.info("Received request to update HistorialEstados with id: {}", id);
+        log.debug("Request body: {}", historialEstadosDTO);
         HistorialEstados historial = mapper.toEntity(historialEstadosDTO);
         HistorialEstados updatedHistorial = service.update(id, historial);
         return ResponseEntity.ok(mapper.toDTO(updatedHistorial));
@@ -182,6 +196,8 @@ public class HistorialEstadosController {
             @Parameter(description = "Datos parciales del historial") 
             @RequestBody HistorialEstadosDTO historialEstadosDTO) {
         
+        log.info("Received request to partially update HistorialEstados with id: {}", id);
+        log.debug("Request body: {}", historialEstadosDTO);
         HistorialEstados historial = mapper.toEntity(historialEstadosDTO);
         HistorialEstados updatedHistorial = service.partialUpdate(id, historial);
         return ResponseEntity.ok(mapper.toDTO(updatedHistorial));
@@ -198,12 +214,20 @@ public class HistorialEstadosController {
             @Parameter(description = "ID del historial") 
             @PathVariable Integer id) {
         
+        log.info("Received request to delete HistorialEstados with id: {}", id);
         service.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
     @ExceptionHandler(HistorialEstadosNotFoundException.class)
-    public ResponseEntity<Void> handleHistorialEstadosNotFound(HistorialEstadosNotFoundException ex) {
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<String> handleHistorialEstadosNotFound(HistorialEstadosNotFoundException ex) {
+        log.error("HistorialEstadosNotFoundException handled: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidTransitionException.class)
+    public ResponseEntity<String> handleInvalidTransition(InvalidTransitionException ex) {
+        log.error("InvalidTransitionException handled: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 } 
