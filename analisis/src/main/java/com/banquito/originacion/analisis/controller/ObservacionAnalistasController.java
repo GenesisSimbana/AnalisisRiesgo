@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import com.banquito.originacion.analisis.controller.dto.ObservacionAnalistasDTO;
 import com.banquito.originacion.analisis.controller.mapper.ObservacionAnalistasMapper;
@@ -37,7 +38,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/v1/observaciones-analistas")
+@RequestMapping("/api/observaciones-analistas")
 @Tag(name = "Observaciones de Analistas", description = "API para gestionar las observaciones de analistas")
 public class ObservacionAnalistasController {
 
@@ -107,6 +108,9 @@ public class ObservacionAnalistasController {
         
         log.info("Received request to get ObservacionAnalistas by idSolicitud: {}", idSolicitud);
         List<ObservacionAnalistas> observaciones = service.findByIdSolicitudOrderByFechaHoraDesc(idSolicitud);
+        if (observaciones.isEmpty()) {
+            throw new ObservacionAnalistasNotFoundException(idSolicitud.toString(), "ID de solicitud");
+        }
         List<ObservacionAnalistasDTO> dtos = mapper.toDTOList(observaciones);
         return ResponseEntity.ok(dtos);
     }
@@ -123,6 +127,9 @@ public class ObservacionAnalistasController {
         
         log.info("Received request to get ObservacionAnalistas by usuario: {}", usuario);
         List<ObservacionAnalistas> observaciones = service.findByUsuarioOrderByFechaHoraDesc(usuario);
+        if (observaciones.isEmpty()) {
+            throw new ObservacionAnalistasNotFoundException(usuario, "usuario");
+        }
         List<ObservacionAnalistasDTO> dtos = mapper.toDTOList(observaciones);
         return ResponseEntity.ok(dtos);
     }
@@ -201,11 +208,5 @@ public class ObservacionAnalistasController {
         log.info("Received request to delete ObservacionAnalistas with id: {}", id);
         service.deleteById(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @ExceptionHandler(ObservacionAnalistasNotFoundException.class)
-    public ResponseEntity<String> handleObservacionAnalistasNotFound(ObservacionAnalistasNotFoundException ex) {
-        log.error("ObservacionAnalistasNotFoundException handled: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 } 

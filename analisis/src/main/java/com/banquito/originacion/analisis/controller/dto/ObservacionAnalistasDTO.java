@@ -38,8 +38,8 @@ public class ObservacionAnalistasDTO {
     private LocalDateTime fechaHora;
     
     @NotBlank(message = "La razón de intervención es obligatoria")
-    @Size(max = 500, message = "La razón de intervención no puede tener más de 500 caracteres")
-    @Schema(description = "Razón de la intervención del analista", example = "Se requiere documentación adicional para completar el análisis")
+    @Size(min = 30, max = 500, message = "La razón de intervención debe tener entre 30 y 500 caracteres")
+    @Schema(description = "Razón de la intervención del analista", example = "Se requiere documentación adicional para completar el análisis de riesgo crediticio")
     private String razonIntervencion;
     
     @Schema(description = "Versión del registro", example = "1")

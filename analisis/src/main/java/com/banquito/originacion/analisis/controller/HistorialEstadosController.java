@@ -37,7 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RestController
-@RequestMapping("/v1/historial-estados")
+@RequestMapping("/api/historial-estados")
 @Tag(name = "Historial de Estados", description = "API para gestionar el historial de estados de solicitudes")
 public class HistorialEstadosController {
 
@@ -107,6 +107,9 @@ public class HistorialEstadosController {
         
         log.info("Received request to get HistorialEstados by idSolicitud: {}", idSolicitud);
         List<HistorialEstados> historiales = service.findByIdSolicitudOrderByFechaHoraDesc(idSolicitud);
+        if (historiales.isEmpty()) {
+            throw new HistorialEstadosNotFoundException(idSolicitud.toString(), "ID de solicitud");
+        }
         List<HistorialEstadosDTO> dtos = mapper.toDTOList(historiales);
         return ResponseEntity.ok(dtos);
     }
@@ -139,6 +142,9 @@ public class HistorialEstadosController {
         
         log.info("Received request to get HistorialEstados by usuario: {}", usuario);
         List<HistorialEstados> historiales = service.findByUsuario(usuario);
+        if (historiales.isEmpty()) {
+            throw new HistorialEstadosNotFoundException(usuario, "usuario");
+        }
         List<HistorialEstadosDTO> dtos = mapper.toDTOList(historiales);
         return ResponseEntity.ok(dtos);
     }
@@ -217,17 +223,5 @@ public class HistorialEstadosController {
         log.info("Received request to delete HistorialEstados with id: {}", id);
         service.deleteById(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @ExceptionHandler(HistorialEstadosNotFoundException.class)
-    public ResponseEntity<String> handleHistorialEstadosNotFound(HistorialEstadosNotFoundException ex) {
-        log.error("HistorialEstadosNotFoundException handled: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-    }
-
-    @ExceptionHandler(InvalidTransitionException.class)
-    public ResponseEntity<String> handleInvalidTransition(InvalidTransitionException ex) {
-        log.error("InvalidTransitionException handled: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 } 
